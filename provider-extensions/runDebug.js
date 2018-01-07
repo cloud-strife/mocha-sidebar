@@ -62,7 +62,7 @@ const debugAll = (element, functionOnTerminate) => {
 
     currentElement = element;
     callFunctionOnTerminate = functionOnTerminate.bind(_provider);
-    mochaTest.args = config.files().glob || ["./test/**/*.js"]
+    mochaTest.args = buildDebugArgs(config);
     mochaTest.env = config.env();
     vscode.debug.startDebugging(vscode.workspace.workspaceFolders[0], mochaTest).then(data => {
         console.log(`debug status:${data}`);
@@ -78,8 +78,7 @@ const debugLevel = async (element, functionOnTerminate) => {
 
     for (let t of tests) {
         currentElement = t;
-        let glob = config.files().glob || "./test/**/*.js";
-        mochaTest.args = [glob, '--grep', `^${t.fullName}$`]
+        mochaTest.args = buildDebugArgs(config, '--grep', `^${t.fullName}$`)
         mochaTest.env = config.env();
         vscode.debug.startDebugging(vscode.workspace.workspaceFolders[0], mochaTest).then(data => {
             console.log(`debug status:${data}`);
@@ -94,8 +93,7 @@ const debugItem = async (element, functionOnTerminate) => {
 
     callFunctionOnTerminate = functionOnTerminate.bind(_provider);
     currentElement = element;
-    let glob = config.files().glob || "./test/**/*.js";
-    mochaTest.args = [glob, '--grep', `^${element.item.__test.fullName}$`]
+    mochaTest.args = buildDebugArgs(config, '--grep', `^${element.item.__test.fullName}$`);
     mochaTest.env = config.env();
     //  let reg = new RegExp(`^${element.item.test.fullName}$`)
     vscode.debug.startDebugging(vscode.workspace.workspaceFolders[0], mochaTest).then(data => {
@@ -114,7 +112,10 @@ const debugInit = provider => _provider = provider;
 //   console.log('wow');
 // })
 
-
+const buildDebugArgs = (config, ...additional) => {
+    return config.requires().map(v => ['-r', v]).reduce((a, b) => a.concat(b), [])
+        .concat([config.files().glob || "./test/**/*.js"]).concat(additional);
+}
 
 vscode.debug.onDidTerminateDebugSession(ev => {
     callDone()
